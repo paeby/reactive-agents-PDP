@@ -18,7 +18,8 @@ public class ReactiveTemplate implements ReactiveBehavior {
 
 	private Random random;
 	private double pPickup;
-
+	private int costPerKm = 5;
+	
 	@Override
 	public void setup(Topology topology, TaskDistribution td, Agent agent) {
 
@@ -29,7 +30,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		
 		//We create a list of all possible states. A state is a specific city with a task to an other specific city
 		//or a city with no task. 
-		ArrayList<State> states = new ArrayList();
+		ArrayList<State> states = new ArrayList<State>();
 		for(City cityFrom: topology.cities()){
 			for(City cityTo: topology.cities()){
 				if(cityFrom.name != cityTo.name){
@@ -39,12 +40,12 @@ public class ReactiveTemplate implements ReactiveBehavior {
 			}
 		}
 		
-		int costPerKm = 5;
+		
 		for(State state: states){
 			// the actions are either to pick the packet or to move to an other city (an action for each city)
 			int rewardPickup = 0;
 			if(state.availableTask){
-				rewardPickup = (int) (td.reward(state.from, state.to) - costPerKm*state.from.distanceTo(state.to));
+				rewardPickup = reward(state.from, state.to, td);
 			}
 			
 			int rewardMove = 0;
@@ -56,19 +57,18 @@ public class ReactiveTemplate implements ReactiveBehavior {
 					// so the probability that there is no task is given by 1-tdprobability
 					
 					//problem: probability to arrive to a state with a specific task....
+					//we can calculate the mean of all the rewards
 					tempReward = 
 					
-					
 				}
-			}
-			
+			}	
 		}
-		
-
-		
-		
-		
 	}
+	
+	public int reward(City from, City to, TaskDistribution td){
+		return (int) (td.reward(from, to) - costPerKm*from.distanceTo(to));
+	}
+	
 	
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
@@ -89,11 +89,13 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		private City from;
 		private City to;
 		private boolean availableTask;
+		private int V;
 		
 		public State(City f, City t, boolean task){
 			from = f;
 			to = t;
 			availableTask = task;
+			V = 0;
 		}
 		
 		public City getFrom(){
