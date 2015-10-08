@@ -168,7 +168,14 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		
 		@Override
 		public boolean equals(Object b){
-			return (this.getFrom().name == ((State) b).getFrom().name) && (this.getTo().name == ((State) b).getTo().name) && (this.getTask() == ((State) b).getTask());
+			if (this.getTo() == null && ((State)b).getTo() == null) 
+				return (this.getFrom().name == ((State) b).getFrom().name); 
+			
+			else if (this.getTo() == null ^ ((State)b).getTo() == null) 
+				return false;
+			  
+			else 
+				return (this.getFrom().name == ((State) b).getFrom().name) && (this.getTo().name == ((State) b).getTo().name) && (this.getTask() == ((State) b).getTask());
 		}
 	}
 	
