@@ -15,10 +15,11 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 public class ReactiveTemplate implements ReactiveBehavior {
-
+	private final double EPSILON = 0.001;
 	private Random random;
 	private double pPickup;
 	private int costPerKm = 5;
+	private ArrayList<State> states = new ArrayList<State>();
 	
 	@Override
 	public void setup(Topology topology, TaskDistribution td, Agent agent) {
@@ -30,53 +31,90 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		
 		//We create a list of all possible states. A state is a specific city with a task to an other specific city
 		//or a city with no task. 
-		ArrayList<State> states = new ArrayList<State>();
 		for(City cityFrom: topology.cities()){
 			for(City cityTo: topology.cities()){
 				if(cityFrom.name != cityTo.name){
 					states.add(new State(cityFrom, cityTo, true));
-					states.add(new State(cityFrom, cityTo, false));
 				}
 			}
+			states.add(new State(cityFrom, null, false));
 		}
 		
+		boolean goodEnough = false;
+		double vChange = 0;
 		
-		for(State state: states){
-			// the actions are either to pick the packet or to move to an other city (an action for each city)
-			int rewardPickup = 0;
-			if(state.availableTask){
-				rewardPickup = reward(state.from, state.to, td);
-			}
+		while(!goodEnough){
 			
-			int rewardMove = 0;
-			City bestCity = null;
-			for(State state2: states){
-				int tempReward = 0;
-				if(state.from.name != state2.from.name){
-					// the probability to arrive to a state with a task is given by td.probability
-					// so the probability that there is no task is given by 1-tdprobability
-					
-					//problem: probability to arrive to a state with a specific task....
-					//we can calculate the mean of all the rewards
-					tempReward = 
-					
+			for(State state: states){
+				// the actions are either to pick the packet or to move to an other city (an action for each city)
+				double rewardPickup = 0;
+				if(state.availableTask){
+					rewardPickup = reward(state.from, state.to, td);
 				}
-			}	
+				
+				double rewardMove = 0;
+				City bestCity = null;
+				for(City neighbour: state.from.neighbors()){
+					// R(s, a)
+					double tempRewardWithPacket = - costPerKm * state.from.distanceTo(neighbour);
+					double tempRewardWithoutPacket = tempRewardWithPacket;
+					for(City nextCity: topology.cities()) {
+						if(nextCity.name != neighbour.name) {
+							// for an available packet in neighbour to nextCity
+							tempRewardWithPacket += td.probability(neighbour, nextCity) * V(neighbour, nextCity, true);
+									
+							// for no packet in neighbour to nextCity
+							tempRewardWithoutPacket += (1-td.probability(neighbour, nextCity)) * V(neighbour, null, false);
+						}
+					}
+					tempRewardWithPacket *= discount;
+					tempRewardWithoutPacket *= discount;
+					
+					if(tempRewardWithPacket > rewardMove) {
+						rewardMove = tempRewardWithPacket;
+						bestCity = neighbour;
+					}
+					else if(tempRewardWithoutPacket > rewardMove) {
+						rewardMove = tempRewardWithoutPacket;
+						bestCity = neighbour;
+					}
+				}
+				
+				if(rewardMove < rewardPickup) {
+					double change = Math.abs(rewardPickup-state.getV());
+					if(change > vChange){
+						vChange = change;
+					}
+					changeAction(null, state);
+					updateV(state, rewardPickup);
+				}
+				else {
+					double change = Math.abs(rewardMove-state.getV());
+					if(change > vChange){
+						vChange = change;
+					}
+					changeAction(bestCity, state);
+					updateV(state, rewardMove);
+				}
+			}
+			if(vChange < EPSILON){
+				goodEnough = true;
+			}
 		}
 	}
 	
-	public int reward(City from, City to, TaskDistribution td){
-		return (int) (td.reward(from, to) - costPerKm*from.distanceTo(to));
+	private double reward(City from, City to, TaskDistribution td){
+		return td.reward(from, to) - costPerKm*from.distanceTo(to);
 	}
-	
 	
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
 		Action action;
 
-		if (availableTask == null || random.nextDouble() > pPickup) {
+		if (availableTask == null) {
 			City currentCity = vehicle.getCurrentCity();
-			action = new Move(currentCity.randomNeighbor(random));
+			State currentState = states.get(states.indexOf(new State(currentCity, null, false)));
+			action = new Move(currentState.getAction());
 		} else {
 			action = new Pickup(availableTask);
 		}
@@ -89,13 +127,15 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		private City from;
 		private City to;
 		private boolean availableTask;
-		private int V;
+		private double V;
+		private City bestAction;
 		
 		public State(City f, City t, boolean task){
 			from = f;
 			to = t;
 			availableTask = task;
 			V = 0;
+			bestAction = null;
 		}
 		
 		public City getFrom(){
@@ -109,5 +149,38 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		public boolean getTask(){
 			return availableTask;
 		}
+		
+		public double getV(){
+			return V;
+		}
+		
+		public void setV(double newV){
+			V = newV;
+		}
+		
+		public City getAction() {
+			return bestAction;
+		}
+		
+		public void setAction(City a) {
+			bestAction = a;
+		}
+		
+		@Override
+		public boolean equals(Object b){
+			return (this.getFrom().name == ((State) b).getFrom().name) && (this.getTo().name == ((State) b).getTo().name) && (this.getTask() == ((State) b).getTask());
+		}
+	}
+	
+	private double V(City from, City to, boolean pack) {
+		return states.get(states.indexOf(new State(from, to, pack))).getV();
+	}
+	
+	private void updateV(State state, double newV) {
+		states.get(states.indexOf(state)).setV(newV);
+	}
+	
+	private void changeAction(City a, State state) {
+		states.get(states.indexOf(state)).setAction(a);
 	}
 }
