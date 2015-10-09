@@ -1,7 +1,6 @@
 package template;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 import logist.simulation.Vehicle;
 import logist.agent.Agent;
@@ -15,10 +14,8 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 public class ReactiveTemplate implements ReactiveBehavior {
-	private final double EPSILON = 0.001;
-	private Random random;
-	private double pPickup;
-	private int costPerKm = 5;
+	private final double EPSILON = 10000;
+	private double costPerKm = 5;
 	private ArrayList<State> states = new ArrayList<State>();
 	
 	@Override
@@ -44,12 +41,12 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		double vChange = 0;
 		
 		while(!goodEnough){
-			
+			vChange = 0;
 			for(State state: states){
 				// the actions are either to pick the packet or to move to an other city (an action for each city)
 				double rewardPickup = 0;
 				if(state.availableTask){
-					rewardPickup = reward(state.from, state.to, td);
+					rewardPickup = reward(state.getFrom(), state.getTo(), td);
 				}
 				
 				double rewardMove = 0;
@@ -62,14 +59,13 @@ public class ReactiveTemplate implements ReactiveBehavior {
 						if(nextCity.name != neighbour.name) {
 							// for an available packet in neighbour to nextCity
 							tempRewardWithPacket += td.probability(neighbour, nextCity) * V(neighbour, nextCity, true);
-									
 							// for no packet in neighbour to nextCity
-							tempRewardWithoutPacket += (1-td.probability(neighbour, nextCity)) * V(neighbour, null, false);
+							//tempRewardWithoutPacket += (1-td.probability(neighbour, nextCity)) * V(neighbour, null, false);
 						}
 					}
 					tempRewardWithPacket *= discount;
-					tempRewardWithoutPacket *= discount;
-					
+					//tempRewardWithoutPacket *= discount;
+
 					if(tempRewardWithPacket > rewardMove) {
 						rewardMove = tempRewardWithPacket;
 						bestCity = neighbour;
