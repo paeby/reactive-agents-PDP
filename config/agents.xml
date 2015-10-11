@@ -2,12 +2,12 @@
 
 <agents>
 	<!-- A list of agents and their behavior classes -->
-	
+
 	<!-- #### REACTIVE AGENTS ### -->
-	<agent name="reactive-random">
+	<agent name="reactive-test">
 		<set class-path="bin/"/>
 		<set class-name="template.ReactiveTemplate"/>
 		<set discount-factor=".85"/>
 	</agent>
-	
+
 </agents>

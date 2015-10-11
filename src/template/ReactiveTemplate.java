@@ -15,7 +15,7 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 public class ReactiveTemplate implements ReactiveBehavior {
-	private final double EPSILON = 0.001;
+	private final double EPSILON = 1;
 	private Random random;
 	private double pPickup;
 	private int costPerKm = 5;
@@ -28,6 +28,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		// If the property is not present it defaults to 0.95
 		Double discount = agent.readProperty("discount-factor", Double.class,
 				0.95);
+		System.out.println("hello!");
 		
 		//We create a list of all possible states. A state is a specific city with a task to an other specific city
 		//or a city with no task. 
@@ -97,6 +98,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 					updateV(state, rewardMove);
 				}
 			}
+			System.out.println(vChange);
 			if(vChange < EPSILON){
 				goodEnough = true;
 			}
