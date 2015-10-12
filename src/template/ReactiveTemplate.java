@@ -15,7 +15,7 @@ import logist.topology.Topology.City;
 
 public class ReactiveTemplate implements ReactiveBehavior {
 	private final double EPSILON = 1;
-	private double costPerKm = 5;
+	private double costPerKm = 70;
 	private ArrayList<State> states = new ArrayList<State>();
 	
 	@Override
@@ -44,32 +44,47 @@ public class ReactiveTemplate implements ReactiveBehavior {
 			vChange = 0;
 			for(State state: states){
 				// the actions are either to pick the packet or to move to an other city (an action for each city)
+				
+				// action to pick up
 				double rewardPickup = 0;
 				if(state.availableTask){
 					rewardPickup = reward(state.getFrom(), state.getTo(), td);
 				}
 				
-				double rewardMove = 0;
+				// action for a move to each neighbour
+				double rewardMove = Integer.MIN_VALUE;
+				double tempReward = 0;
 				City bestCity = null;
 				for(City neighbour: state.from.neighbors()){
 					// R(s, a)
-					double tempReward = - costPerKm * ((state.from.distanceTo(neighbour))/10000.0);
-
+					double tempRewardWithTask = - costPerKm * ((state.from.distanceTo(neighbour)));
+					double tempRewardWithoutTask = tempRewardWithTask;
+					
 					for(City nextCity: topology.cities()) {
 						if(nextCity.name != neighbour.name) {
 							// for an available packet in neighbour to nextCity
-							tempReward += td.probability(neighbour, nextCity) * V(neighbour, nextCity, true);
+							tempRewardWithTask += td.probability(neighbour, nextCity) * V(neighbour, nextCity, true);
 						}
 					}
-					tempReward *= discount;
-	
+					tempRewardWithoutTask += (td.probability(neighbour, null)) * V(neighbour, null, false);
+					
+					tempRewardWithTask *= discount;
+					tempRewardWithoutTask *= discount;
+					
+					if(tempRewardWithTask > tempRewardWithoutTask){
+						tempReward = tempRewardWithTask;
+					}
+					else{
+						tempReward = tempRewardWithoutTask;
+					}
+					
 					if(tempReward > rewardMove) {
 						rewardMove = tempReward;
 						bestCity = neighbour;
 					}
 				}
 				
-				if(rewardMove < rewardPickup) {
+				if((rewardMove < rewardPickup) && state.availableTask) {
 					double change = Math.abs(rewardPickup-state.getV());
 					if(change > vChange){
 						vChange = change;
@@ -93,7 +108,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	}
 	
 	private double reward(City from, City to, TaskDistribution td){
-		return td.reward(from, to) - costPerKm*(from.distanceTo(to))/10000.0;
+		return td.reward(from, to) - costPerKm*(from.distanceTo(to));
 	}
 	
 	@Override
@@ -167,11 +182,11 @@ public class ReactiveTemplate implements ReactiveBehavior {
 			if (this.getTo() == null && ((State)b).getTo() == null) 
 				return (this.getFrom().name == ((State) b).getFrom().name); 
 			
-			else if (this.getTo() == null ^ ((State)b).getTo() == null) 
+			else if ((this.getTo() == null) ^ (((State)b).getTo() == null)) 
 				return false;
 			  
 			else 
-				return (this.getFrom().name == ((State) b).getFrom().name) && (this.getTo().name == ((State) b).getTo().name) && (this.getTask() == ((State) b).getTask());
+				return ((this.getFrom().name == ((State) b).getFrom().name) && (this.getTo().name == ((State) b).getTo().name) && (this.getTask() == ((State) b).getTask()));
 		}
 	}
 	
