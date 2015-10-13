@@ -15,7 +15,7 @@ import logist.topology.Topology.City;
 
 public class ReactiveTemplate implements ReactiveBehavior {
 	private final double EPSILON = 1;
-	private double costPerKm = 70;
+	private double costPerKm = 5;
 	private ArrayList<State> states = new ArrayList<State>();
 	
 	@Override
@@ -49,6 +49,13 @@ public class ReactiveTemplate implements ReactiveBehavior {
 				double rewardPickup = 0;
 				if(state.availableTask){
 					rewardPickup = reward(state.getFrom(), state.getTo(), td);
+					// potential reward in the destination of the task
+					for(City nextCity: topology.cities()) {
+						if(nextCity.name != state.to.name) {
+							rewardPickup += td.probability(state.to, nextCity) * V(state.to, nextCity, true);
+						}
+					}
+					rewardPickup += (td.probability(state.to, null)) * V(state.to, null, false);
 				}
 				
 				// action for a move to each neighbour
