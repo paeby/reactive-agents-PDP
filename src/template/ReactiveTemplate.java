@@ -15,7 +15,7 @@ import logist.topology.Topology.City;
 
 public class ReactiveTemplate implements ReactiveBehavior {
 
-	private final double EPSILON = 1;
+	private final double EPSILON = 0.01;
 	private double costPerKm = 5;
 	private ArrayList<State> states = new ArrayList<State>();
 	Agent agent;
@@ -26,7 +26,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		// Reads the discount factor from the agents.xml file.
 		// If the property is not present it defaults to 0.95
 		Double discount = agent.readProperty("discount-factor", Double.class,
-				0.95);
+				0.9);
 		
 		//We create a list of all possible states. A state is a specific city with a task to an other specific city
 		//or a city with no task. 

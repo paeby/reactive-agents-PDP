@@ -52,4 +52,12 @@ The case where the current action is just a move to a new city, we proceed in th
 In the end, we simply check which of the two cases, picking up the task or choosing the best neighbour to move to, yields a higher value and store it in the current \texttt{State} object.
 
 \section{Testing and results}
+We set up the configuration files such that the simulation runs for the topology provided for Switzerland, and the reward and probability distributions as provided by default. 
+
+We ran the simulation for various discount factors, ranging between some very small value (e.g. 0.01) and some very large one (e.g. 0.99999). The effect of this is not in the profit per action, but in the time it takes for the learning algorithm to converge. This is because with lower discount, there's less induced fluctuation from the values of future states. This could indicate that it is in fact quite rare to refuse an available task, because the potential value of future states exists also in the destination of the task.
+
+In order to assess the efficiency of the reactive agent, we ran a simulation alongside a random agent. The results show that after 2000 steps, the profit per action for the random agent is $38'000 (\pm 1000)$ and for the reactive agent $48'000 (\pm 1000)$. So the reactive agent is roughly 25\% more efficient.
+
+When testing a simulation with several reactive agents, we could perceive some slight differences at first, but after a while (say about 3000 steps) they were all clearly converging to a very similar profit per action value.
+
 \end{document}
