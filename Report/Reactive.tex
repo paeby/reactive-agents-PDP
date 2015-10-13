@@ -1,0 +1,55 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\author{Prisca Aeby, Alexis Semple}
+\title{A reactive agent solution for the Pickup and Delivery problem}
+\date{}
+
+% Paragraph format
+\setlength{\parindent}{0em}
+\setlength{\parskip}{0.5em}
+
+\begin{document}
+\maketitle
+
+The Pickup and Delivery problem can be solved by implementing an intelligent agent that optimally reacts to received information. The agent is trained offline by a reinforced learning algorithm. Our main task consisted in defining the information contained by a state in our model, such that the agent could efficiently make decisions depending on his current state.
+
+\section{State description}
+An agent needs to receive information based on the location in which he currently is that will allow him to decide what action will maximise his reward.
+
+At any stage in a simulation, the necessary information for an efficient decision making process is the agent's location, whether a task is available for pickup in that location, and if yes what the destination of that task is. These are the three values we decided to include in our \texttt{State} description. As a result we were able to implement the algorithm discussed in the course describing a MDP with value iteration. 
+
+\subsection*{Actions}
+
+Before we proceeded to the algorithm, we had to address the issue of possible actions of any agent at any given state. Two variants exist:
+
+\begin{itemize}
+\item The current state contains a task: the agent has two possible types of action. It can either decide to pick up the task and deliver it to its destination, or leave the task and move to a neighbouring city. In the latter case, each move to a neighbouring city is its own individual action.
+\item The current state doesn't contain a task: the agent is left with only the second type of action described above. It has to move to a neighbouring city.
+\end{itemize}
+
+\section{Reinforced learning implementation}
+
+The value iteration algorithm used for this coursework iterates over each state and each action available for that state and computes the following:
+\begin{center}
+$Q(s,a) \longleftarrow R(s,a) + \gamma \Sigma_{s' \in S} T(s,a,s')\cdot V(s')$ 
+\end{center}
+and retains the maximum value \textit{V(s)} for each state. We store the relevant information directly in our \texttt{State} class, rather than creating individual tables for the functions. This means that \texttt{State} contains class variables for start and destination cities, a boolean value that indicate the availability of a task, a variable for the best potential value and one for the best potential action (\texttt{null} if the task is picked up, else the new destination city).
+
+\subsubsection*{Reward function}
+\textit{R(s,a)}, the reward function, requires the cost of movement from start to destination and the reward value for the task, if a task is available. For training, we decided an arbitrary value for the cost/km.
+
+\subsubsection*{Value iteration}
+The action of moving to another city, be it by picking up a task or not, contributes to the final value of a state through the transition function \textit{T(s,a,s')} and the value function \textit{V(s')}. We compute this separately for the case where a pickup is made, and when not. 
+
+In the case of a pickup, we iterate over all possible states that have the starting location of the destination city, call it \texttt{dest}, of our current state. For each of these states, the transition function is the probability that it contains a task from \texttt{dest} to a new city, call it \texttt{newC}. \textit{V(s')} is then the value of the state that has parameters \texttt{dest} as starting point and an available task with destination \texttt{newC}. One additional state exists for which the value needs to be taken into account, i.e. the state where \texttt{dest} has no available task. The transition function then is the probability that there is no task at \texttt{dest}.
+
+The case where the current action is just a move to a new city, we proceed in the same way as for a pickup, only now we have to compute the values for all neighbours of the starting location.
+
+In the end, we simply check which of the two cases, picking up the task or choosing the best neighbour to move to, yields a higher value and store it in the current \texttt{State} object.
+
+\section{Testing and results}
+\end{document}
