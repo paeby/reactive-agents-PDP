@@ -14,9 +14,11 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 public class ReactiveTemplate implements ReactiveBehavior {
+
 	private final double EPSILON = 1;
 	private double costPerKm = 5;
 	private ArrayList<State> states = new ArrayList<State>();
+	Agent agent;
 	
 	@Override
 	public void setup(Topology topology, TaskDistribution td, Agent agent) {
@@ -103,14 +105,27 @@ public class ReactiveTemplate implements ReactiveBehavior {
 				goodEnough = true;
 			}
 		}
+		// ADDED CODE
+		this.agent = agent;
 	}
 	
 	private double reward(City from, City to, TaskDistribution td){
 		return td.reward(from, to) - costPerKm*(from.distanceTo(to));
 	}
 	
+	int counterSteps = 0;
+	
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
+		
+		// ADDED CODE - this output gives information about the "goodness" of your agent (higher values are preferred)
+		if ((counterSteps > 0)&&(counterSteps%100 == 0)) {
+			System.out.println("REACTIVE: The total profit after "+counterSteps+" steps is "+agent.getTotalProfit()+".");
+			System.out.println("The profit per action after "+counterSteps+" steps is "+((double)agent.getTotalProfit() / counterSteps)+".");
+		}
+		counterSteps++;
+		// END OF ADDED CODE
+				
 		Action action;
 		City currentCity = vehicle.getCurrentCity();
 		
