@@ -60,30 +60,21 @@ public class ReactiveTemplate implements ReactiveBehavior {
 				
 				// action for a move to each neighbour
 				double rewardMove = Integer.MIN_VALUE;
-				double tempReward = 0;
 				City bestCity = null;
 				for(City neighbour: state.from.neighbors()){
 					// R(s, a)
-					double tempRewardWithTask = - costPerKm * ((state.from.distanceTo(neighbour)));
-					double tempRewardWithoutTask = tempRewardWithTask;
+					double tempReward = - costPerKm * ((state.from.distanceTo(neighbour)));
 					
+					// Iteration through all possible states
 					for(City nextCity: topology.cities()) {
 						if(nextCity.name != neighbour.name) {
 							// for an available packet in neighbour to nextCity
-							tempRewardWithTask += td.probability(neighbour, nextCity) * V(neighbour, nextCity, true);
+							tempReward += td.probability(neighbour, nextCity) * V(neighbour, nextCity, true);
 						}
 					}
-					tempRewardWithoutTask += (td.probability(neighbour, null)) * V(neighbour, null, false);
+					tempReward += (td.probability(neighbour, null)) * V(neighbour, null, false);
 					
-					tempRewardWithTask *= discount;
-					tempRewardWithoutTask *= discount;
-					
-					if(tempRewardWithTask > tempRewardWithoutTask){
-						tempReward = tempRewardWithTask;
-					}
-					else{
-						tempReward = tempRewardWithoutTask;
-					}
+					tempReward *= discount;
 					
 					if(tempReward > rewardMove) {
 						rewardMove = tempReward;
